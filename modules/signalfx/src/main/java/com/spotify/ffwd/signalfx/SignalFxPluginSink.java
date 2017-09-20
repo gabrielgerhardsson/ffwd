@@ -15,6 +15,7 @@
  */
 package com.spotify.ffwd.signalfx;
 
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.signalfx.metrics.flush.AggregateMetricSender;
@@ -45,6 +46,10 @@ public class SignalFxPluginSink implements BatchedPluginSink {
 
     @Inject
     private Supplier<AggregateMetricSender> senderSupplier;
+
+    /* @see https://docs.signalfx.com/en/latest/best-practices/naming-conventions.html */
+
+    private static final int CHAR_LIMIT = 256;
 
     private final ExecutorService executorService = Executors.newCachedThreadPool(
         new ThreadFactoryBuilder().setNameFormat("ffwd-signalfx-async-%d").build());
@@ -98,7 +103,10 @@ public class SignalFxPluginSink implements BatchedPluginSink {
                             .map(attribute -> SignalFxProtocolBuffers.Dimension
                                 .newBuilder()
                                 .setKey(attribute.getKey())
-                                .setValue(attribute.getValue())
+                                .setValue(Strings.nullToEmpty(attribute.getValue())
+                                    .substring(0,
+                                        Math.min(Strings.nullToEmpty(attribute.getValue()).length(),
+                                            CHAR_LIMIT + 1)))
                                 .build())
                             .forEach(datapointBuilder::addDimensions);
 
@@ -140,7 +148,10 @@ public class SignalFxPluginSink implements BatchedPluginSink {
                 metricIdentity.add(stat);
             }
         }
-        return metricIdentity.stream().collect(Collectors.joining("."));
+        String resultIdentity = metricIdentity.stream().collect(Collectors.joining("."));
+
+        return resultIdentity.length() > CHAR_LIMIT ?
+            resultIdentity.substring(0, CHAR_LIMIT + 1) : resultIdentity;
     }
 
     @Override
