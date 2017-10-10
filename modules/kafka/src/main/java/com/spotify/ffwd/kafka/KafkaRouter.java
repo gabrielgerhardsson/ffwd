@@ -36,7 +36,7 @@ public interface KafkaRouter {
 
     String route(final Metric metric);
 
-    String route(final Batch.Metric metric, final Batch batch);
+    String route(final Batch.Metric metric);
 
     class Tag implements KafkaRouter {
         private static final String DEFAULT = "default";
@@ -81,7 +81,7 @@ public interface KafkaRouter {
         }
 
         @Override
-        public String route(final Batch.Metric metric, final Batch batch) {
+        public String route(final Batch.Metric metric) {
             final String tagValue = metric.getTags().get(tagKey);
 
             if (tagValue != null) {
@@ -122,7 +122,7 @@ public interface KafkaRouter {
         }
 
         @Override
-        public String route(final Batch.Metric metric, final Batch batch) {
+        public String route(final Batch.Metric metric) {
             return metrics;
         }
 

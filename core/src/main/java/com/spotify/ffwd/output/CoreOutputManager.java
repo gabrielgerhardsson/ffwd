@@ -197,17 +197,6 @@ public class CoreOutputManager implements OutputManager {
             mergedTags, metric.getProc());
     }
 
-    /**
-     * Filter the provided Metric and complete fields.
-     */
-    private Batch filter(final Batch batch) {
-        final Map<String, String> mergedTags = selectTags(metric);
-        final String host = selectHost(metric);
-
-        return new Metric(metric.getKey(), metric.getValue(), time, host, mergedRiemannTags,
-            mergedTags, metric.getProc());
-    }
-
     private Map<String, String> selectTags(Metric metric) {
         if (skipTagsForKeys.contains(metric.getKey()) || tags.isEmpty()) {
             return metric.getTags();
