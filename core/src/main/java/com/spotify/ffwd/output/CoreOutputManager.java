@@ -128,13 +128,11 @@ public class CoreOutputManager implements OutputManager {
     public void sendBatch(Batch batch) {
         statistics.reportSentMetrics(batch.getMetrics().size());
 
-        final Metric filtered = filter(metric);
-
-        debug.inspectMetric(DEBUG_ID, filtered);
+        debug.inspectBatch(DEBUG_ID, batch);
 
         for (final PluginSink s : sinks) {
             if (s.isReady()) {
-                s.sendMetric(filtered);
+                s.sendBatch(batch);
             }
         }
     }

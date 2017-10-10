@@ -17,6 +17,7 @@ package com.spotify.ffwd.output;
 
 import com.google.inject.Inject;
 import com.spotify.ffwd.filter.Filter;
+import com.spotify.ffwd.model.Batch;
 import com.spotify.ffwd.model.Event;
 import com.spotify.ffwd.model.Metric;
 import com.spotify.ffwd.statistics.OutputPluginStatistics;
@@ -150,6 +151,11 @@ public class FlushingPluginSink implements PluginSink {
             batch.metrics.add(metric);
             checkBatch(batch);
         }
+    }
+
+    @Override
+    public void sendBatch(final com.spotify.ffwd.model.Batch batch) {
+        sink.sendBatch(batch);
     }
 
     @Override

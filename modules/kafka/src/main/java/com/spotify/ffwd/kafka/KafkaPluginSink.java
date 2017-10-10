@@ -19,6 +19,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterators;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
+import com.spotify.ffwd.model.Batch;
 import com.spotify.ffwd.model.Event;
 import com.spotify.ffwd.model.Metric;
 import com.spotify.ffwd.output.BatchedPluginSink;
@@ -94,6 +95,22 @@ public class KafkaPluginSink implements BatchedPluginSink {
                 return null;
             }
         }, executorService);
+    }
+
+    @Override
+    public void sendBatch(final Batch batch) {
+        send(toBatches(iteratorFor(batch.getMetrics(), new Converter<Batch.Metric>() {
+            @Override
+            public KeyedMessage<Integer, byte[]> toMessage(final Batch.Metric metric)
+                throws Exception {
+
+
+                final String topic = router.route(metric, );
+                final int partition = partitioner.partition(metric, host);
+                final byte[] payload = serializer.serialize(metric);
+                return new KeyedMessage<>(topic, partition, payload);
+            }
+        })));
     }
 
     @Override
