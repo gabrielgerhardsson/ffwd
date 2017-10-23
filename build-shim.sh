@@ -1,5 +1,7 @@
 #!/bin/bash
 
-IMAGE_ID=$(docker build -f docker/Dockerfile.shim .)
+timestamp=$(date +"%Y%m%dT%H%M%S")
+tag=gcr.io/operation-covfefe-1/ffwd-java-shim:$timestamp
 
-echo $IMAGE_ID
+gcloud docker -- build -t $tag -f docker/Dockerfile.shim .
+gcloud docker -- push $tag
