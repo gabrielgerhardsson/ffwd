@@ -19,3 +19,4 @@ output:
   plugins:
     - type: http
       baseUrl: "http://ffwd.spotify.net"
+    - type: debug
