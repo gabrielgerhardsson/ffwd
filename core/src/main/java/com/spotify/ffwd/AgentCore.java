@@ -16,6 +16,7 @@
 package com.spotify.ffwd;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -49,6 +50,7 @@ import com.spotify.ffwd.module.FastForwardModule;
 import com.spotify.ffwd.module.PluginContext;
 import com.spotify.ffwd.module.PluginContextImpl;
 import com.spotify.ffwd.output.OutputManager;
+import com.spotify.ffwd.output.OutputPlugin;
 import com.spotify.ffwd.protocol.ProtocolClients;
 import com.spotify.ffwd.protocol.ProtocolClientsImpl;
 import com.spotify.ffwd.protocol.ProtocolServers;
@@ -76,6 +78,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -87,6 +90,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AgentCore {
+    private static final String FFWD_OUTPUTS = "FFWD_OUTPUTS";
+    public static final TypeReference<List<OutputPlugin>> OUTPUT_PLUGIN_LIST =
+        new TypeReference<List<OutputPlugin>>() {
+        };
     private final List<Class<? extends FastForwardModule>> modules;
     private final Path config;
     private final CoreStatistics statistics;
@@ -183,9 +190,8 @@ public class AgentCore {
     }
 
     /**
-     * Setup early application Injector.
-     * <p>
-     * The early injector is used by modules to configure the system.
+     * Setup early application Injector. <p> The early injector is used by modules to configure the
+     * system.
      *
      * @throws Exception If something could not be set up.
      */
@@ -210,7 +216,7 @@ public class AgentCore {
 
             @Singleton
             @Provides
-            @Named("application/yaml+config")
+            @Named("config")
             public SimpleModule configModule(
                 Map<String, FilterDeserializer.PartialDeserializer> filters
             ) {
@@ -346,16 +352,44 @@ public class AgentCore {
     }
 
     private AgentConfig readConfig(Injector early) throws IOException {
-        final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        final ObjectMapper yaml = new ObjectMapper(new YAMLFactory());
         final SimpleModule module =
-            early.getInstance(Key.get(SimpleModule.class, Names.named("application/yaml+config")));
+            early.getInstance(Key.get(SimpleModule.class, Names.named("config")));
 
-        mapper.registerModule(module);
+        yaml.registerModule(module);
 
+        final AgentConfig config = readYamlAgentConfig(yaml);
+
+        final List<OutputPlugin> plugins = new ArrayList<>(config.getOutput().getPlugins());
+
+        final ObjectMapper json = new ObjectMapper();
+        json.registerModule(module);
+        readOutputPluginsConfig(json, FFWD_OUTPUTS, OUTPUT_PLUGIN_LIST).ifPresent(plugins::addAll);
+
+        return config.withOutput(config.getOutput().withPlugins(plugins));
+    }
+
+    private AgentConfig readYamlAgentConfig(final ObjectMapper yaml) throws IOException {
         try (final InputStream input = Files.newInputStream(this.config)) {
-            return mapper.readValue(input, AgentConfig.class);
+            return yaml.readValue(input, AgentConfig.class);
         } catch (JsonParseException | JsonMappingException e) {
             throw new IOException("Failed to parse configuration", e);
+        }
+    }
+
+    private <T> Optional<T> readOutputPluginsConfig(
+        final ObjectMapper json, final String env, final TypeReference<T> typeReference
+    ) throws IOException {
+        final String input = System.getenv(env);
+        if (input == null) {
+            return Optional.empty();
+        }
+
+        try {
+            return json.readValue(input, typeReference);
+        } catch (Exception e) {
+            throw new RuntimeException("Error while parsing configuration provided in env " + env,
+                e);
         }
     }
 

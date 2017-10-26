@@ -17,6 +17,7 @@ package com.spotify.ffwd.output;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -32,15 +33,18 @@ import com.spotify.ffwd.filter.Filter;
 import com.spotify.ffwd.filter.TrueFilter;
 import com.spotify.ffwd.statistics.CoreStatistics;
 import com.spotify.ffwd.statistics.OutputManagerStatistics;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import lombok.Data;
 
+@Data
 public class OutputManagerModule {
-    private static final List<OutputPlugin> DEFAULT_PLUGINS = Lists.newArrayList();
+    private static final List<OutputPlugin> DEFAULT_PLUGINS = ImmutableList.of();
     /**
      * Prefix of environment variable that adds additional tags.
      */
@@ -142,6 +146,10 @@ public class OutputManagerModule {
                 }
             }
         };
+    }
+
+    public OutputManagerModule withPlugins(final List<OutputPlugin> plugins) {
+        return new OutputManagerModule(plugins, this.filter);
     }
 
     /**

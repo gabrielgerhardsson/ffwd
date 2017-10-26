@@ -21,8 +21,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.spotify.ffwd.input.InputManagerModule;
 import com.spotify.ffwd.output.OutputManagerModule;
-import lombok.Data;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -31,7 +29,11 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Data
 public class AgentConfig {
     public static final int DEFAULT_ASYNC_THREADS = 4;
@@ -94,6 +96,11 @@ public class AgentConfig {
         } catch (UnknownHostException e) {
             throw new RuntimeException("unable to get local host", e);
         }
+    }
+
+    public AgentConfig withOutput(OutputManagerModule output) {
+        return new AgentConfig(debug, host, tags, riemannTags, skipTagsForKeys, input, output,
+            asyncThreads, schedulerThreads, bossThreads, workerThreads, ttl, qlog);
     }
 
     @Data
