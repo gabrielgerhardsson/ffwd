@@ -21,6 +21,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.spotify.ffwd.filter.Filter;
+import com.spotify.ffwd.module.Flushing;
 import com.spotify.ffwd.output.BatchedPluginSink;
 import com.spotify.ffwd.output.FlushingPluginSink;
 import com.spotify.ffwd.output.OutputPlugin;
@@ -45,11 +46,12 @@ public class RiemannOutputPlugin extends OutputPlugin {
     @JsonCreator
     public RiemannOutputPlugin(
         @JsonProperty("flushInterval") Optional<Long> flushInterval,
+        @JsonProperty("flushing") Optional<Flushing> flushing,
         @JsonProperty("protocol") ProtocolFactory protocol,
         @JsonProperty("retry") RetryPolicy retry, @JsonProperty("filter") Optional<Filter> filter
 
     ) {
-        super(filter, flushInterval);
+        super(filter, Flushing.from(flushInterval, flushing));
         this.protocol = Optional
             .ofNullable(protocol)
             .orElseGet(ProtocolFactory.defaultFor())
@@ -75,9 +77,9 @@ public class RiemannOutputPlugin extends OutputPlugin {
                 bind(RiemannMessageDecoder.class).in(Scopes.SINGLETON);
                 bind(ProtocolClient.class).to(protocolClient).in(Scopes.SINGLETON);
 
-                if (flushInterval != null && flushInterval.isPresent()) {
+                if (flushing != null && flushing.getFlushInterval().isPresent()) {
                     bind(BatchedPluginSink.class).toInstance(new ProtocolPluginSink(retry));
-                    bind(key).toInstance(new FlushingPluginSink(flushInterval.get()));
+                    bind(key).toInstance(new FlushingPluginSink(flushing.getFlushInterval().get()));
                 } else {
                     bind(key).toInstance(new ProtocolPluginSink(retry));
                 }

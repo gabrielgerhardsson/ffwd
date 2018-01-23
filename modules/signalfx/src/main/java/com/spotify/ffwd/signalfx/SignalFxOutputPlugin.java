@@ -31,6 +31,7 @@ import com.signalfx.metrics.connection.HttpEventProtobufReceiverFactory;
 import com.signalfx.metrics.errorhandler.OnSendErrorHandler;
 import com.signalfx.metrics.flush.AggregateMetricSender;
 import com.spotify.ffwd.filter.Filter;
+import com.spotify.ffwd.module.Flushing;
 import com.spotify.ffwd.output.OutputPlugin;
 import com.spotify.ffwd.output.OutputPluginModule;
 import com.spotify.ffwd.output.PluginSink;
@@ -55,11 +56,11 @@ public class SignalFxOutputPlugin extends OutputPlugin {
     public SignalFxOutputPlugin(
         @JsonProperty("sourceName") String sourceName, @JsonProperty("authToken") String authToken,
         @JsonProperty("flushInterval") Optional<Long> flushInterval,
+        @JsonProperty("flushing") Optional<Flushing> flushing,
         @JsonProperty("soTimeout") Integer soTimeout,
         @JsonProperty("filter") Optional<Filter> filter
     ) {
-        super(filter,
-            flushInterval.isPresent() ? flushInterval : Optional.of(DEFAULT_FLUSH_INTERVAL));
+        super(filter, Flushing.from(flushInterval, flushing, Optional.of(DEFAULT_FLUSH_INTERVAL)));
         this.sourceName = Optional.ofNullable(sourceName).orElse(DEFAULT_SOURCE_NAME);
         this.authToken = Optional
             .ofNullable(authToken)
