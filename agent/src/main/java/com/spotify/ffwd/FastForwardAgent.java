@@ -24,16 +24,46 @@ import com.spotify.metrics.jvm.GarbageCollectorMetricSet;
 import com.spotify.metrics.jvm.MemoryUsageGaugeSet;
 import com.spotify.metrics.jvm.ThreadStatesMetricSet;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
 public class FastForwardAgent {
+    private final Statistics statistics;
+    private final AgentCore core;
+
     public static void main(String[] argv) {
+        final FastForwardAgent agent = buildAgent(getConfigStream(argv));
+        run(agent);
+    }
+
+    public static InputStream getConfigStream(String[] argv) {
+        Path path = Paths.get("ffwd.yaml");
+        if (argv.length > 0) {
+            path = Paths.get(argv[0]);
+        }
+
+        try {
+            return Files.newInputStream(path);
+        } catch (IOException e) {
+            log.error("Error in agent, exiting", e);
+            System.exit(1);
+            // Make IDEA happy
+            return null;
+        }
+    }
+
+    public static FastForwardAgent buildAgent(final InputStream config) {
         // needed for HTTP content decompression in:
         // com.spotify.ffwd.http.HttpModule
         System.setProperty("io.netty.noJdkZlibDecoder", "false");
@@ -44,14 +74,15 @@ public class FastForwardAgent {
             System.exit(2);
         });
 
-        final Statistics s;
+        final Statistics statistics;
 
         try {
-            s = setupStatistics();
+            statistics = setupStatistics();
         } catch (Exception e) {
             log.error("Failed to setup statistics", e);
             System.exit(1);
-            return;
+            // Make IDEA happy
+            return null;
         }
 
         final List<Class<? extends FastForwardModule>> modules = new ArrayList<>();
@@ -74,23 +105,25 @@ public class FastForwardAgent {
 
         final AgentCore.Builder builder = AgentCore.builder().modules(modules);
 
-        if (argv.length > 0) {
-            builder.config(Paths.get(argv[0]));
-        }
-
-        builder.statistics(s.statistics);
+        builder.statistics(statistics.statistics);
+        builder.config(config);
 
         final AgentCore core = builder.build();
+        final FastForwardAgent agent = new FastForwardAgent(statistics, core);
 
+        return agent;
+    }
+
+    public static void run(final FastForwardAgent agent) {
         try {
-            core.run();
+            agent.getCore().run();
         } catch (Exception e) {
             log.error("Error in agent, exiting", e);
             System.exit(1);
             return;
         }
 
-        s.stop();
+        agent.getStatistics().stop();
         System.exit(0);
     }
 

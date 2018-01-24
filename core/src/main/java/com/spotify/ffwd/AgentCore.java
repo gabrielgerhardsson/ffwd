@@ -90,11 +90,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AgentCore {
     private final List<Class<? extends FastForwardModule>> modules;
-    private final Path config;
+    private final InputStream config;
     private final CoreStatistics statistics;
 
     private AgentCore(
-        final List<Class<? extends FastForwardModule>> modules, Path config,
+        final List<Class<? extends FastForwardModule>> modules, InputStream config,
         CoreStatistics statistics
     ) {
         this.modules = modules;
@@ -378,7 +378,7 @@ public class AgentCore {
         mapper.registerModule(new Jdk8Module());
         mapper.registerModule(module);
 
-        try (final InputStream input = Files.newInputStream(this.config)) {
+        try (final InputStream input = this.config) {
             return mapper.readValue(input, AgentConfig.class);
         } catch (JsonParseException | JsonMappingException e) {
             throw new IOException("Failed to parse configuration", e);
@@ -418,10 +418,11 @@ public class AgentCore {
 
     public static final class Builder {
         private List<Class<? extends FastForwardModule>> modules = Lists.newArrayList();
-        private Path config = Paths.get("ffwd.yaml");
+        private InputStream config;
+        private Path path;
         private CoreStatistics statistics = NoopCoreStatistics.get();
 
-        public Builder config(Path config) {
+        public Builder config(InputStream config) {
             if (config == null) {
                 throw new NullPointerException("'config' must not be null");
             }
