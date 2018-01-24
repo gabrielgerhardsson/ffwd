@@ -25,7 +25,7 @@ public class Flushing {
     protected final Optional<Long> flushInterval;
 
     @JsonCreator
-    public Flushing(@JsonProperty("flushing") Optional<Long> flushInterval) {
+    public Flushing(@JsonProperty("flushInterval") Optional<Long> flushInterval) {
         this.flushInterval = flushInterval;
     }
 
