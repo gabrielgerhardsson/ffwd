@@ -23,9 +23,9 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import com.spotify.ffwd.filter.Filter;
-import com.spotify.ffwd.module.Flushing;
+import com.spotify.ffwd.module.Batching;
 import com.spotify.ffwd.output.BatchedPluginSink;
-import com.spotify.ffwd.output.FlushingPluginSink;
+import com.spotify.ffwd.output.BatchingPluginSink;
 import com.spotify.ffwd.output.OutputPlugin;
 import com.spotify.ffwd.output.OutputPluginModule;
 import com.spotify.ffwd.output.PluginSink;
@@ -52,7 +52,7 @@ public class KafkaOutputPlugin extends OutputPlugin {
     public KafkaOutputPlugin(
         @JsonProperty("producer") Map<String, String> properties,
         @JsonProperty("flushInterval") Optional<Long> flushInterval,
-        @JsonProperty("flushing") Optional<Flushing> flushing,
+        @JsonProperty("batching") Optional<Batching> batching,
         @JsonProperty("router") KafkaRouter router,
         @JsonProperty("partitioner") KafkaPartitioner partitioner,
         @JsonProperty("serializer") Serializer serializer,
@@ -60,7 +60,7 @@ public class KafkaOutputPlugin extends OutputPlugin {
         @JsonProperty("compression") Boolean compression,
         @JsonProperty("filter") Optional<Filter> filter
     ) {
-        super(filter, Flushing.from(flushInterval, flushing));
+        super(filter, Batching.from(flushInterval, batching));
         this.router = Optional.ofNullable(router).orElseGet(KafkaRouter.Tag.supplier());
         this.partitioner = Optional.ofNullable(partitioner).orElseGet(KafkaPartitioner.Host::new);
         this.properties = Optional.ofNullable(properties).orElseGet(HashMap::new);
@@ -101,9 +101,9 @@ public class KafkaOutputPlugin extends OutputPlugin {
                     bind(Serializer.class).to(Key.get(Serializer.class, Names.named("default")));
                 }
 
-                if (flushing.getFlushInterval().isPresent()) {
+                if (batching.getFlushInterval().isPresent()) {
                     bind(BatchedPluginSink.class).toInstance(new KafkaPluginSink(batchSize));
-                    bind(key).toInstance(new FlushingPluginSink(flushing.getFlushInterval().get()));
+                    bind(key).toInstance(new BatchingPluginSink(batching.getFlushInterval().get()));
                 } else {
                     bind(key).toInstance(new KafkaPluginSink(batchSize));
                 }

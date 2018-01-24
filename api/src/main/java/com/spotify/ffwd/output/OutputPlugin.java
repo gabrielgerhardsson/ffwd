@@ -23,25 +23,25 @@ import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.name.Names;
 import com.spotify.ffwd.filter.Filter;
-import com.spotify.ffwd.module.Flushing;
+import com.spotify.ffwd.module.Batching;
 import java.util.Optional;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 public abstract class OutputPlugin {
 
-    protected final Flushing flushing;
+    protected final Batching batching;
     protected final Optional<Filter> filter;
 
     public OutputPlugin() {
         filter = Optional.empty();
-        flushing = Flushing.empty();
+        batching = Batching.empty();
     }
 
     public OutputPlugin(
-        final Optional<Filter> filter, final Flushing flushing
+        final Optional<Filter> filter, final Batching batching
     ) {
         this.filter = filter;
-        this.flushing = flushing;
+        this.batching = batching;
     }
 
     /**
@@ -74,7 +74,7 @@ public abstract class OutputPlugin {
             protected void configure() {
                 Key<PluginSink> sinkKey = (Key<PluginSink>) input;
 
-                if (flushing != null && flushing.getFlushInterval().isPresent() &&
+                if (batching != null && batching.getFlushInterval().isPresent() &&
                     BatchedPluginSink.class.isAssignableFrom(input.getTypeLiteral().getRawType())) {
                     final Key<PluginSink> flushingKey =
                         Key.get(PluginSink.class, Names.named("flushing"));
@@ -83,10 +83,10 @@ public abstract class OutputPlugin {
 
                     // Use annotation so that we can avoid name space clash
                     bind(BatchedPluginSink.class)
-                        .annotatedWith(FlushingDelegate.class)
+                        .annotatedWith(BatchingDelegate.class)
                         .to(batchedPluginSink);
                     bind(flushingKey).toInstance(
-                        new FlushingPluginSink(flushing.getFlushInterval().get()));
+                        new BatchingPluginSink(batching.getFlushInterval().get()));
 
                     sinkKey = flushingKey;
                 }

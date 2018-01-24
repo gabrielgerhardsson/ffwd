@@ -21,7 +21,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.spotify.ffwd.filter.Filter;
-import com.spotify.ffwd.module.Flushing;
+import com.spotify.ffwd.module.Batching;
 import com.spotify.ffwd.output.OutputPlugin;
 import com.spotify.ffwd.output.PluginSink;
 import com.spotify.ffwd.protocol.Protocol;
@@ -47,9 +47,9 @@ public class TemplateOutputPlugin extends OutputPlugin {
         @JsonProperty("retry") final RetryPolicy retry,
         @JsonProperty("filter") Optional<Filter> filter,
         @JsonProperty("flushInterval") Optional<Long> flushInterval,
-        @JsonProperty("flushing") Optional<Flushing> flushing
+        @JsonProperty("batching") Optional<Batching> batching
     ) {
-        super(filter, Flushing.from(flushInterval, flushing));
+        super(filter, Batching.from(flushInterval, batching));
         this.protocol = Optional
             .ofNullable(protocol)
             .orElseGet(ProtocolFactory.defaultFor())

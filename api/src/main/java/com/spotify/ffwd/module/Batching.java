@@ -21,21 +21,21 @@ import java.util.Optional;
 import lombok.Data;
 
 @Data
-public class Flushing {
+public class Batching {
     protected final Optional<Long> flushInterval;
 
     @JsonCreator
-    public Flushing(@JsonProperty("flushInterval") Optional<Long> flushInterval) {
+    public Batching(@JsonProperty("flushInterval") Optional<Long> flushInterval) {
         this.flushInterval = flushInterval;
     }
 
-    public static Flushing from(
-        final Optional<Long> flushInterval, final Optional<Flushing> flushing) {
+    public static Batching from(
+        final Optional<Long> flushInterval, final Optional<Batching> flushing) {
         return from(flushInterval, flushing, Optional.empty());
     }
 
-    public static Flushing from(
-        final Optional<Long> flushInterval, final Optional<Flushing> flushing,
+    public static Batching from(
+        final Optional<Long> flushInterval, final Optional<Batching> flushing,
         final Optional<Long> defaultFlushInterval
     ) {
         if (flushInterval.isPresent() && flushing.isPresent()) {
@@ -47,12 +47,12 @@ public class Flushing {
             return flushing.get();
         }
         if (flushInterval.isPresent()) {
-            return new Flushing(flushInterval);
+            return new Batching(flushInterval);
         }
-        return new Flushing(defaultFlushInterval);
+        return new Batching(defaultFlushInterval);
     }
 
-    public static Flushing empty() {
+    public static Batching empty() {
         return from(Optional.empty(), Optional.empty(), Optional.empty());
     }
 }

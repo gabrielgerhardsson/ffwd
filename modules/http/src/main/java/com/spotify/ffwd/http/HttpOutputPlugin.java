@@ -27,7 +27,7 @@ import com.google.inject.name.Names;
 import com.netflix.loadbalancer.ILoadBalancer;
 import com.netflix.loadbalancer.LoadBalancerBuilder;
 import com.spotify.ffwd.filter.Filter;
-import com.spotify.ffwd.module.Flushing;
+import com.spotify.ffwd.module.Batching;
 import com.spotify.ffwd.output.OutputPlugin;
 import com.spotify.ffwd.output.OutputPluginModule;
 import com.spotify.ffwd.output.PluginSink;
@@ -45,12 +45,12 @@ public class HttpOutputPlugin extends OutputPlugin {
     @JsonCreator
     public HttpOutputPlugin(
         @JsonProperty("id") String id, @JsonProperty("flushInterval") Optional<Long> flushInterval,
-        @JsonProperty("flushing") Optional<Flushing> flushing,
+        @JsonProperty("batching") Optional<Batching> batching,
         @JsonProperty("discovery") HttpDiscovery discovery,
         @JsonProperty("filter") Optional<Filter> filter
 
     ) {
-        super(filter, Flushing.from(flushInterval, flushing, Optional.of(DEFAULT_FLUSH_INTERVAL)));
+        super(filter, Batching.from(flushInterval, batching, Optional.of(DEFAULT_FLUSH_INTERVAL)));
         this.discovery = Optional.ofNullable(discovery).orElseGet(HttpDiscovery::supplyDefault);
     }
 

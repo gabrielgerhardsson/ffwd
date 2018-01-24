@@ -49,7 +49,7 @@ import org.slf4j.Logger;
  */
 @RequiredArgsConstructor
 @Data
-public class FlushingPluginSink implements PluginSink {
+public class BatchingPluginSink implements PluginSink {
     public static final long DEFAULT_BATCH_SIZE_LIMIT = 10000;
     public static final long DEFAULT_MAX_PENDING_FLUSHES = 10;
 
@@ -57,7 +57,7 @@ public class FlushingPluginSink implements PluginSink {
     AsyncFramework async;
 
     @Inject
-    @FlushingDelegate
+    @BatchingDelegate
     BatchedPluginSink sink;
 
     @Inject
@@ -122,7 +122,7 @@ public class FlushingPluginSink implements PluginSink {
 
     volatile boolean stopped = false;
 
-    public FlushingPluginSink(long flushInterval) {
+    public BatchingPluginSink(long flushInterval) {
         this(flushInterval, DEFAULT_BATCH_SIZE_LIMIT, DEFAULT_MAX_PENDING_FLUSHES);
     }
 
@@ -220,8 +220,8 @@ public class FlushingPluginSink implements PluginSink {
                 pending.add(doLastFlush());
 
                 synchronized (pendingLock) {
-                    pending.addAll(FlushingPluginSink.this.pending);
-                    FlushingPluginSink.this.pending.clear();
+                    pending.addAll(BatchingPluginSink.this.pending);
+                    BatchingPluginSink.this.pending.clear();
                 }
 
                 return async.collectAndDiscard(pending);

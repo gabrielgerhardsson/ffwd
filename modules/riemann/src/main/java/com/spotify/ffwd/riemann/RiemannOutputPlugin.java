@@ -21,9 +21,9 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.spotify.ffwd.filter.Filter;
-import com.spotify.ffwd.module.Flushing;
+import com.spotify.ffwd.module.Batching;
 import com.spotify.ffwd.output.BatchedPluginSink;
-import com.spotify.ffwd.output.FlushingPluginSink;
+import com.spotify.ffwd.output.BatchingPluginSink;
 import com.spotify.ffwd.output.OutputPlugin;
 import com.spotify.ffwd.output.OutputPluginModule;
 import com.spotify.ffwd.output.PluginSink;
@@ -46,12 +46,12 @@ public class RiemannOutputPlugin extends OutputPlugin {
     @JsonCreator
     public RiemannOutputPlugin(
         @JsonProperty("flushInterval") Optional<Long> flushInterval,
-        @JsonProperty("flushing") Optional<Flushing> flushing,
+        @JsonProperty("batching") Optional<Batching> batching,
         @JsonProperty("protocol") ProtocolFactory protocol,
         @JsonProperty("retry") RetryPolicy retry, @JsonProperty("filter") Optional<Filter> filter
 
     ) {
-        super(filter, Flushing.from(flushInterval, flushing));
+        super(filter, Batching.from(flushInterval, batching));
         this.protocol = Optional
             .ofNullable(protocol)
             .orElseGet(ProtocolFactory.defaultFor())
@@ -77,9 +77,9 @@ public class RiemannOutputPlugin extends OutputPlugin {
                 bind(RiemannMessageDecoder.class).in(Scopes.SINGLETON);
                 bind(ProtocolClient.class).to(protocolClient).in(Scopes.SINGLETON);
 
-                if (flushing != null && flushing.getFlushInterval().isPresent()) {
+                if (batching != null && batching.getFlushInterval().isPresent()) {
                     bind(BatchedPluginSink.class).toInstance(new ProtocolPluginSink(retry));
-                    bind(key).toInstance(new FlushingPluginSink(flushing.getFlushInterval().get()));
+                    bind(key).toInstance(new BatchingPluginSink(batching.getFlushInterval().get()));
                 } else {
                     bind(key).toInstance(new ProtocolPluginSink(retry));
                 }
