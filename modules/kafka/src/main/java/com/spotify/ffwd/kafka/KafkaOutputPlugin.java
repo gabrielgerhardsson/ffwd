@@ -102,7 +102,7 @@ public class KafkaOutputPlugin extends OutputPlugin {
 
                 final Key<KafkaPluginSink> sinkKey =
                     Key.get(KafkaPluginSink.class, Names.named("kafkaSink"));
-                bind(sinkKey).to(KafkaPluginSink.class).in(Scopes.SINGLETON);
+                bind(sinkKey).toInstance(new KafkaPluginSink(batchSize));
                 install(wrapPluginSink(sinkKey, key));
                 expose(key);
             }

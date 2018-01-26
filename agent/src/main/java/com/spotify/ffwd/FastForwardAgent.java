@@ -43,27 +43,16 @@ public class FastForwardAgent {
     private final AgentCore core;
 
     public static void main(String[] argv) {
-        final FastForwardAgent agent = buildAgent(getConfigStream(argv));
+        Optional<Path> path = Optional.empty();
+        if (argv.length > 0) {
+            path = Optional.of(Paths.get(argv[0]));
+        }
+
+        final FastForwardAgent agent = setup(path, Optional.empty());
         run(agent);
     }
 
-    public static InputStream getConfigStream(String[] argv) {
-        Path path = Paths.get("ffwd.yaml");
-        if (argv.length > 0) {
-            path = Paths.get(argv[0]);
-        }
-
-        try {
-            return Files.newInputStream(path);
-        } catch (IOException e) {
-            log.error("Error in agent, exiting", e);
-            System.exit(1);
-            // Make IDEA happy
-            return null;
-        }
-    }
-
-    public static FastForwardAgent buildAgent(final InputStream config) {
+    public static FastForwardAgent setup(final Optional<Path> configPath, final Optional<InputStream> configStream) {
         // needed for HTTP content decompression in:
         // com.spotify.ffwd.http.HttpModule
         System.setProperty("io.netty.noJdkZlibDecoder", "false");
@@ -106,7 +95,8 @@ public class FastForwardAgent {
         final AgentCore.Builder builder = AgentCore.builder().modules(modules);
 
         builder.statistics(statistics.statistics);
-        builder.config(config);
+        configStream.map(builder::configStream);
+        configPath.map(builder::configPath);
 
         final AgentCore core = builder.build();
         final FastForwardAgent agent = new FastForwardAgent(statistics, core);
