@@ -111,6 +111,13 @@ public class OutputManagerModule {
 
             @Provides
             @Singleton
+            @Named("tagsBlacklist")
+            public Set<String> tagsBlacklist(AgentConfig config) {
+                return config.getTagsBlacklist();
+            }
+
+            @Provides
+            @Singleton
             @Named("host")
             public String host(AgentConfig config) {
                 return config.getHost();

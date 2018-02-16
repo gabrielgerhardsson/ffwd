@@ -64,6 +64,10 @@ public class CoreOutputManager implements OutputManager {
     private Set<String> skipTagsForKeys;
 
     @Inject
+    @Named("tagsBlacklist")
+    private Set<String> tagsBlacklist;
+
+    @Inject
     @Named("host")
     private String host;
 
@@ -232,16 +236,32 @@ public class CoreOutputManager implements OutputManager {
 
     private Map<String, String> selectTags(Metric metric) {
         if (skipTagsForKeys.contains(metric.getKey()) || tags.isEmpty()) {
-            return metric.getTags();
+            if (tagsBlacklist.isEmpty()) {
+                return metric.getTags();
+            }
+
+            // Honor tags blacklist
+            final Map<String, String> filtered = Maps.newHashMap(metric.getTags());
+            tagsBlacklist.forEach(filtered::remove);
+            return filtered;
         }
 
         final Map<String, String> mergedTags;
         mergedTags = Maps.newHashMap(tags);
         mergedTags.putAll(metric.getTags());
+
+        // Honor tags blacklist
+        tagsBlacklist.forEach(mergedTags::remove);
+
         return mergedTags;
     }
 
     private String selectHost(Metric metric) {
+        if (tagsBlacklist.contains("host")) {
+            // The host tag is blacklisted
+            return null;
+        }
+
         if (skipTagsForKeys.contains(metric.getKey())) {
             return metric.getHost();
         }

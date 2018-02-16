@@ -51,6 +51,7 @@ public class AgentConfig {
     private final Map<String, String> resource;
     private final Set<String> riemannTags;
     private final Set<String> skipTagsForKeys;
+    private final Set<String> tagsBlacklist;
     private final InputManagerModule input;
     private final OutputManagerModule output;
     private final SearchDomainDiscovery searchDomain;
@@ -68,6 +69,7 @@ public class AgentConfig {
         @JsonProperty("resource") Map<String, String> resource,
         @JsonProperty("riemannTags") Set<String> riemannTags,
         @JsonProperty("skipTagsForKeys") Set<String> skipTagsForKeys,
+        @JsonProperty("tagsBlacklist") Set<String> tagsBlacklist,
         @JsonProperty("input") InputManagerModule input,
         @JsonProperty("output") OutputManagerModule output,
         @JsonProperty("searchDomain") SearchDomainDiscovery searchDomain,
@@ -83,6 +85,7 @@ public class AgentConfig {
         this.resource = Optional.ofNullable(resource).orElse(DEFAULT_RESOURCE);
         this.riemannTags = Optional.ofNullable(riemannTags).orElse(DEFAULT_RIEMANNTAGS);
         this.skipTagsForKeys = Optional.ofNullable(skipTagsForKeys).orElse(Sets.newHashSet());
+        this.tagsBlacklist = Optional.ofNullable(tagsBlacklist).orElse(Sets.newHashSet());
         this.input = Optional.ofNullable(input).orElseGet(InputManagerModule.supplyDefault());
         this.output = Optional.ofNullable(output).orElseGet(OutputManagerModule.supplyDefault());
         this.searchDomain =
