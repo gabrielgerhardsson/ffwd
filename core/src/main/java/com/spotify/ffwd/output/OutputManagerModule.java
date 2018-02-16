@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class OutputManagerModule {
     private static final List<OutputPlugin> DEFAULT_PLUGINS = Lists.newArrayList();
@@ -90,8 +91,8 @@ public class OutputManagerModule {
             @Provides
             @Singleton
             @Named("resource")
-            public Map<String, String> resource() {
-                return systemEnvResourceTags();
+            public Map<String, String> resource(AgentConfig config) {
+                return mergeResourceTags(config.getResource());
             }
 
             @Provides
@@ -175,6 +176,15 @@ public class OutputManagerModule {
         }
 
         return tags;
+    }
+
+    /**
+     * Merge resource tags from configuration with overrides from system environment
+     */
+    static Map<String, String> mergeResourceTags(final Map<String, String> configResource) {
+        Map<String, String> merged = new HashMap<>(configResource);
+        merged.putAll(systemEnvResourceTags());
+        return merged;
     }
 
     /**
