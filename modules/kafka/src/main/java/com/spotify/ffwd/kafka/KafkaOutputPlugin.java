@@ -28,13 +28,15 @@ import com.spotify.ffwd.output.OutputPlugin;
 import com.spotify.ffwd.output.OutputPluginModule;
 import com.spotify.ffwd.output.PluginSink;
 import com.spotify.ffwd.serializer.Serializer;
-import kafka.javaapi.producer.Producer;
-import kafka.producer.ProducerConfig;
-
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Optional;
+import java.util.Properties;
+import java.util.function.Supplier;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.IntegerSerializer;
 
 public class KafkaOutputPlugin implements OutputPlugin {
     public static final int DEFAULT_BATCH_SIZE = 1000;
@@ -59,8 +61,7 @@ public class KafkaOutputPlugin implements OutputPlugin {
         @JsonProperty("compression") Boolean compression
     ) {
         this.router = Optional.ofNullable(router).orElseGet(KafkaRouter.Tag.supplier());
-        this.partitioner = Optional.ofNullable(partitioner)
-                                   .orElseGet(KafkaPartitioner.Host::new);
+        this.partitioner = Optional.ofNullable(partitioner).orElseGet(KafkaPartitioner.Host::new);
         this.flushInterval = Optional.ofNullable(flushInterval);
         this.properties = Optional.ofNullable(properties).orElseGet(HashMap::new);
         this.serializer = Optional.ofNullable(serializer);
@@ -73,19 +74,21 @@ public class KafkaOutputPlugin implements OutputPlugin {
         return new OutputPluginModule(id) {
             @Provides
             @Singleton
-            public Producer<Integer, byte[]> producer() {
-                final Properties props = new Properties();
-                props.putAll(properties);
-                props.put("partitioner.class", IntegerPartitioner.class.getCanonicalName());
-                props.put("key.serializer.class", IntegerEncoder.class.getCanonicalName());
+            public Supplier<Producer<Integer, byte[]>> producer() {
+                return () -> {
+                    final Properties props = new Properties();
+                    props.putAll(properties);
+                    props.put("partitioner.class", IntegerPartitioner.class.getCanonicalName());
+                    props.put("key.serializer", IntegerSerializer.class.getCanonicalName());
+                    props.put("value.serializer", ByteArraySerializer.class.getCanonicalName());
 
-                // enable gzip.
-                if (compression) {
-                    props.put("compression.codec", "1");
-                }
+                    // enable gzip.
+                    if (compression) {
+                        props.put("compression.type", "gzip");
+                    }
 
-                final ProducerConfig config = new ProducerConfig(props);
-                return new Producer<Integer, byte[]>(config);
+                    return new KafkaProducer<>(props);
+                };
             }
 
             @Override

@@ -125,6 +125,7 @@ public class FlushingPluginSink implements PluginSink {
 
     @Override
     public void init() {
+        sink.init();
     }
 
     @Override
